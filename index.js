@@ -1,8 +1,26 @@
-const axios = require('axios');
+const axios = require('axios-https-proxy-fix');
 const cheerio = require('cheerio');
 const { promisify } = require('util');
 const mysql = require('mysql');
 // const redis = require('./libs/redis');
+
+// proxy setting.change below to fit your setup.
+var proxyConfig = {
+    useProxy:true,
+    setting: {
+        protocol: 'https',
+        host: '127.0.0.1',
+        port: 8889,
+        // auth: {
+        //     username: 'mikeymike',
+        //     password: 'rapunz3l'
+        // }
+    }
+}
+if (proxyConfig.useProxy){
+    console.log("Setting proxy.")
+    axios.defaults.proxy = proxyConfig.setting
+}
 
 // mysql connection. change below to fit your setup.
 // we really not recommanded to login with root user,
