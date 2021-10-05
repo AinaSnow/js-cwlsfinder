@@ -2,19 +2,39 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const { promisify } = require('util');
 const mysql = require('mysql');
-const redis = require('./libs/redis');
+// const redis = require('./libs/redis');
 
-// mysql 연결
+// mysql connection. change below to fit your setup.
+// we really not recommanded to login with root user,
+// but we are debugging , so hey.
 var sqlCon = mysql.createConnection({
     host: 'localhost',
-    user: 'cwlsdb',
-    password: 'cwlsdbpass',
+    user: 'root',
+    port: 3307,
+    password: 'usbw',
     database: 'lodestonedb',
 });
 sqlCon.connect();
 
 const CWLSService = function () {};
 CWLSService.prototype.delay = (ms = 1000) => new Promise(r => setTimeout(r, ms));
+
+
+// CWLS can named with English char(26),Number(10),punctuation(10)
+// which with a total of 46 choices
+// in order to fit the 20 pages limitation of search result,
+// we need to split those down,with naming.
+charUsable = ".,:;!?&-_'"
+generateSearchName = (idx1,idx2) => {
+    return [idx1,idx2].reduce((acc,cur) => {
+        if(cur < 36){
+            return acc + cur.toString(36)
+        }
+        else{
+            return acc + charUsable[cur - 36]
+        }
+    },"")
+}
 
 /**
  * 호출할 주소 목록 생성
@@ -24,15 +44,15 @@ CWLSService.prototype.delay = (ms = 1000) => new Promise(r => setTimeout(r, ms))
 CWLSService.prototype.makeCallList = () => {
     let res = [];
     //26
-    for (let priIdx = 0; priIdx < 1; priIdx++) {
-        for (let secIdx = 0; secIdx < 1; secIdx++) {
+    for (let priIdx = 0; priIdx < 46; priIdx++) {
+        for (let secIdx = 0; secIdx < 46; secIdx++) {
             const searchParam = {
-                word: (priIdx + 10).toString(36) + (secIdx + 10).toString(36),
-                dcName: 'Mana',
+                word: generateSearchName(priIdx,secIdx),
+                dcName: '',
                 charCount: '',
                 order: 1
             };
-            const cwlsFinderUrl = `https://na.finalfantasyxiv.com/lodestone/crossworld_linkshell/?q=${searchParam.word}&dcname=${searchParam.dcName}&character_count=${searchParam.charCount}&order=${searchParam.order}`;
+            const cwlsFinderUrl = `https://na.finalfantasyxiv.com/lodestone/crossworld_linkshell/?q=${encodeURIComponent(searchParam.word)}&dcname=${searchParam.dcName}&character_count=${searchParam.charCount}&order=${searchParam.order}`;
             res.push(cwlsFinderUrl);
         }
     }
@@ -51,7 +71,7 @@ CWLSService.prototype.fetchCWLS = async function (pList) {
     for (let _idx = 0, _total = pList.length; _idx < _total; _idx++) {
         // 조회 시 쉴틈을 만들자 (429 에러 대비)
         await this.delay();
-
+        
         // 페이지 단위 조회
         let cwListTotalPage = 1;
         for (let curPage = 1; curPage <= cwListTotalPage; curPage++) {
@@ -87,8 +107,8 @@ CWLSService.prototype.fetchCWLS = async function (pList) {
             }
             catch (e) {
                 console.error(e);
-                const saddAsync = promisify(redis.sadd).bind(redis);
-                await saddAsync('error-queue', `${pList[_idx]}&page=${curPage}`);
+                // const saddAsync = promisify(redis.sadd).bind(redis);
+                // await saddAsync('error-queue', `${pList[_idx]}&page=${curPage}`);
             }
         }
     }
@@ -157,8 +177,8 @@ CWLSService.prototype.fetchCWLSDetail = async function (pDetailUrlList) {
             }
             catch (e) {
                 console.error(e);
-                const saddAsync = promisify(redis.sadd).bind(redis);
-                await saddAsync('error-queue-detail', pDetailUrlList[_idx].url);
+                // const saddAsync = promisify(redis.sadd).bind(redis);
+                // await saddAsync('error-queue-detail', pDetailUrlList[_idx].url);
             }
         }
     }
