@@ -10,8 +10,8 @@ const mysql = require('mysql');
 var sqlCon = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    port: 3307,
-    password: 'usbw',
+    port: 3306,
+    password: 'cwlspassword',
     database: 'lodestonedb',
 });
 sqlCon.connect();
@@ -48,7 +48,7 @@ CWLSService.prototype.makeCallList = () => {
         for (let secIdx = 0; secIdx < 46; secIdx++) {
             const searchParam = {
                 word: generateSearchName(priIdx,secIdx),
-                dcName: '',
+                dcName: 'Mana',
                 charCount: '',
                 order: 1
             };
