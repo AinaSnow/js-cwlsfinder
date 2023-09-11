@@ -1,1 +1,3 @@
-# js-cwlsfinder
+# 石之家用户数据抓取
+填写cookie，安装运行库运行即可
+遍历UUID获取数据，保存到csv,代码基本都为Chatgpt创作，详细可以看代码。
